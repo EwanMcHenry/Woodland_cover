@@ -50,6 +50,8 @@ do_ni_curation <- function(nfi_data, lcm_data) {
 nfi_data$nfi.ha <-  units::set_units(st_area(nfi_data), "ha")
 
 nfi_data$og_IFT_IOA <- nfi_data$IFT_IOA
+nfi_data$og_Categ <- nfi_data$CATEGORY
+nfi_data$og_nfi.ha <- nfi_data$nfi.ha
 
 ## Power line inconsistency ----
 # pl20 <- nfigb2020[ nfigb2020$IFT_IOA == "Powerline", ]
@@ -68,7 +70,6 @@ nfi_data$og_IFT_IOA <- nfi_data$IFT_IOA
 # convert all powerline to Urban for consistencey
 nfi_data$IFT_IOA[ nfi_data$IFT_IOA == "Powerline" ] <- "Urban"
 
-nfi_data$og_Categ <- nfi_data$CATEGORY
 
 ## Sort uncertain woodland, "assumed woodland" etc ----
 uncertain_woodland_df <- nfi_data[ nfi_data$IFT_IOA %in% uncertain_woodland, ] %>% 
@@ -188,12 +189,6 @@ nfi_data$og.IFT <- gsub(" - Confirmed Broadleaf| - Confirmed Confier| - Not wood
 
 # add area
 nfi_data$nfi.ha <-   units::set_units(st_area(nfi_data), "ha")
-
-# area of original 
-nfi_data <- nfi_data %>%
-  group_by(OBJECTID) %>%
-  mutate(og_nfi.ha = sum(nfi.ha)) %>% 
-  ungroup()
 
 # to add to curation
 # give a nu_ift for broadleaf and coniferous
