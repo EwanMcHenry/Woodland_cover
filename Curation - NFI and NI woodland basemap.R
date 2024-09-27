@@ -42,10 +42,10 @@ table(nfigb2022$IFT_IOA, nfigb2022$CATEGORY)
 
 # curation nfi ----
 # 
-nfi_data <- ni2022
+nfi_data <- nfigb2022
 lcm_data <- lcmgb2020
 
-do_ni_curation <- function(nfi_data, lcm_data) {
+do_nfi_curation <- function(nfi_data, lcm_data) {
   ## nfi ha ----
 nfi_data$nfi.ha <-  units::set_units(st_area(nfi_data), "ha")
 
@@ -246,7 +246,7 @@ ni2022$CATEGORY[ni2022$TYPE %in% c("OPEN GROUND")] <- "Non woodland"
 
 ni2022$nu_IFT <- case_when(
   ni2022$TYPE %in% c("BROADLEAF") ~ "Broadleaved",
-  ni2022$TYPE %in% c("CONIFER") ~ "Conifer",
+  ni2022$TYPE %in% c("CONIFER") ~ "Coniferous",
   ni2022$TYPE %in% c("MIXED CONIFER/BROADLEAF") ~ "Mixed",
   ni2022$TYPE %in% c("NOT KNOWN") ~ "Uncertain",
   ni2022$TYPE %in% c("OPEN GROUND") ~ "Other",
