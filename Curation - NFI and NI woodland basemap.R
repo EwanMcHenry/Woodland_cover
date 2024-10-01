@@ -104,6 +104,7 @@ for (i in 1:nrow(uncertain_woodland_df)) {
   # Write original info from nfi
   sf_polygons$COUNTRY <- this.poly$COUNTRY
   sf_polygons$OBJECTID <- this.poly$OBJECTID
+  sf_polygons$og_nfi.ha <- uncertain_woodland_df[i, ]$og_nfi.ha
   # sf_polygons$nfi.ha <-   units::set_units(st_area(sf_polygons), "ha")
   
   # Separate non-woodland polygons for later union
@@ -186,15 +187,20 @@ nfi_data <- nfigb2022 %>%
 
 # original IFT
 nfi_data$og.IFT <- gsub(" - Confirmed Broadleaf| - Confirmed Confier| - Not woodland", "", nfi_data$IFT_IOA)
+# original category
+nfi_data$og.CATEGORY <- nfi_data$CATEGORY
+# those IFT_IOA types with >1 category type were originally woodland
+nfi_data$og.CATEGORY[nfi_data$og.IFT %in% colnames(table(nfi_data$CATEGORY, nfi_data$og.IFT))[colSums(table(nfi_data$CATEGORY, nfi_data$og.IFT)
+ > 0) > 1]] <- "Woodland"
 
 # add area
 nfi_data$nfi.ha <-   units::set_units(st_area(nfi_data), "ha")
 
-# to add to curation
 # give a nu_ift for broadleaf and coniferous
-nfi_data <- nfi_data %>% 
-  mutate(nu_IFT = case_when(
-    IFT_IOA %in% c( "Agriculture land", 
+ift_describer <- function(nfi_data) {
+  nfi_data <- nfi_data %>% 
+    mutate(nu_IFT = case_when(
+      IFT_IOA %in% c("OPEN GROUND", "Agriculture land", 
                     "Assumed woodland - Not woodland", 
                     "Bare area", 
                     "Cloud \\ shadow - Not woodland", 
@@ -202,33 +208,67 @@ nfi_data <- nfi_data %>%
                     "Felled - Not woodland", "Grassland", "Ground prep - Not woodland", 
                     "Low density", "Open water", "Other vegetation", "Powerline", 
                     "Quarry", "River", "Road", "Urban", 
-                    "Windblow - Not woodland", "Windfarm" ) ~ "Other",
+                    "Windblow - Not woodland", "Windfarm" ,
+                    "Young trees - Not woodland") ~ "Other",
 
-    IFT_IOA %in% c("Young trees") ~ "Young trees",
-    IFT_IOA %in% c("Uncertain") ~ "Uncertain",
-    IFT_IOA %in% c("Coppice", "Coppice with standards") ~ "Coppice",
-    IFT_IOA %in% c("Mixed", "Mixed mainly broadleaved", "Mixed mainly conifer") ~ "Mixed",
+    IFT_IOA %in% c("NOT KNOWN", "REGENERATING", "Uncertain") ~ "Uncertain",
+    IFT_IOA %in% c("SHORT ROTATION COPPICE (SRC)", "Coppice", "Coppice with standards") ~ "Broadleaved",
+    IFT_IOA %in% c("MIXED CONIFER/BROADLEAF", "Mixed", "Mixed mainly broadleaved", "Mixed mainly conifer") ~ "Mixed",
     
-    IFT_IOA %in% c("Assumed woodland - Confirmed Broadleaf", 
+    IFT_IOA %in% c("BROADLEAF", "Assumed woodland - Confirmed Broadleaf", 
                    "Broadleaved",
                    "Cloud \\ shadow - Confirmed Broadleaf", 
                    "Failed - Confirmed Broadleaf", 
                    "Felled - Confirmed Broadleaf", "Ground prep - Confirmed Broadleaf", 
                    "Low density", "Shrub", 
-                   "Windblow - Confirmed Broadleaf") ~ "Broadleaved",
+                   "Windblow - Confirmed Broadleaf",
+                   "Young trees - Confirmed Broadleaf") ~ "Broadleaved",
     
-    IFT_IOA %in% c("Assumed woodland - Confirmed Confier", "Conifer", 
-                   "Cloud \\ shadow - Confirmed Confier", "Failed - Confirmed Confier", 
-                   "Felled - Confirmed Confier", "Ground prep - Confirmed Confier", 
-                   "Windblow - Confirmed Confier") ~ "Coniferous",
+    IFT_IOA %in% c("CONIFER", "Assumed woodland - Confirmed Confier", 
+                   "Conifer", 
+                   "Cloud \\ shadow - Confirmed Confier", 
+                   "Failed - Confirmed Confier", 
+                   "Felled - Confirmed Confier", 
+                   "Ground prep - Confirmed Confier", 
+                   "Windblow - Confirmed Confier",
+                   "Young trees - Confirmed Confier") ~ "Coniferous",
+    
+    TRUE ~ "Other"
+  )) %>% 
+  mutate(nu_IFT_2 = case_when(
+    og.IFT %in% c("OPEN GROUND", "Agriculture land", 
+                    "Bare area", 
+                   "Grassland", 
+                    "Open water", "Other vegetation", "Powerline", 
+                    "Quarry", "River", "Road", "Urban", 
+                   "Windfarm" ) ~ "Other",
+    
+    og.IFT %in% c("NOT KNOWN", "Uncertain") ~ "Uncertain",
+    og.IFT %in% c("Assumed woodland") ~ "Assumed woodland",
+    og.IFT %in% c("Shrub") ~ "Shrub",
+    og.IFT %in% c("Low density") ~ "Low density",
+    og.IFT %in% c("REGENERATING", "Young trees") ~ "Young trees",
+    og.IFT %in% c("SHORT ROTATION COPPICE (SRC)", "Coppice", "Coppice with standards") ~ "Coppice",
+    og.IFT %in% c("Failed") ~ "Failed",
+    og.IFT %in% c("Felled") ~ "Felled",
+    og.IFT %in% c("Ground prep") ~ "Ground prep",
+    og.IFT %in% c("Windblow") ~ "Windblow",
+    
+    og.IFT %in% c("MIXED CONIFER/BROADLEAF", "Mixed", "Mixed mainly broadleaved", "Mixed mainly conifer") ~ "Mixed",
+    
+    og.IFT %in% c("BROADLEAF", "Broadleaved") ~ "Broadleaved",
+    
+    og.IFT %in% c("CONIFER", "Conifer") ~ "Coniferous",
     
     TRUE ~ "Other"
   ))
+  
+  return(nfi_data)
+}
 
-nfi_data$nu_IFT_2 <- nfi_data$nu_IFT
-nfigb2022_curated <- nfi_data
+nfigb2022_curated <- ift_describer(nfi_data)
 
-save(nfigb2022_curated,uncertain_woodland,  file = "nfi_data_2022_curated.RData")
+save(nfigb2022_curated,uncertain_woodland,  file = "Data//nfi_data_2022_curated.RData")
 
 
 
@@ -238,32 +278,25 @@ save(nfigb2022_curated,uncertain_woodland,  file = "nfi_data_2022_curated.RData"
 ni2022 =  st_read(paste0(gis.wd, ni.wd,  "\\NIWoodlandBasemapV1_3\\NIWoodlandBasemapV1_3.shp")) %>% 
   st_transform(27700) # convert to OSGB
 
-ni2022$COUNTRY <- "N. Ireland"
+ni2022$COUNTRY <- "N.Ireland"
 ni2022$og.IFT <- ni2022$TYPE
+ni2022$IFT_IOA <- ni2022$TYPE
+
 ni2022$og_nfi.ha <-   units::set_units(st_area(ni2022), "ha")
 ni2022$CATEGORY <- "Woodland"
 ni2022$CATEGORY[ni2022$TYPE %in% c("OPEN GROUND")] <- "Non woodland"
+ni2022$og.CATEGORY <- ni2022$CATEGORY
 
-ni2022$nu_IFT <- case_when(
-  ni2022$TYPE %in% c("BROADLEAF") ~ "Broadleaved",
-  ni2022$TYPE %in% c("CONIFER") ~ "Coniferous",
-  ni2022$TYPE %in% c("MIXED CONIFER/BROADLEAF") ~ "Mixed",
-  ni2022$TYPE %in% c("NOT KNOWN") ~ "Uncertain",
-  ni2022$TYPE %in% c("OPEN GROUND") ~ "Other",
-  ni2022$TYPE %in% c("REGENERATING") ~ "Young trees",
-  ni2022$TYPE %in% c("SHORT ROTATION COPPICE (SRC)") ~ "Coppice",
-  TRUE ~ "Other"
-)
-ni2022$nu_IFT_2 <- ni2022$nu_IFT
-ni2022$nu_IFT_2[ni2022$nu_IFT %in% c("Broadleaved", "Coppice")] <- "Broadleaved"
-ni2022$nu_IFT_2[ni2022$nu_IFT %in% c("Mixed")] <- "Mixed"
-ni2022$nu_IFT_2[ni2022$nu_IFT %in% c("Conifer")] <- "Coniferous"
+# if CEH cross check done shoudl be here
+
+# ift names
+ni2022 <- ift_describer(ni2022)
 
 ni2022$nfi.ha <-   units::set_units(st_area(ni2022), "ha")
 
 ni2022_curated <- ni2022
 # save
-save(ni2022_curated, file = "ni2022_curated.RData")
+save(ni2022_curated, file = "Data//ni2022_curated.RData")
 
 
 # combining NFI GB and woodland basemap ---- 
@@ -283,4 +316,4 @@ nfi_combined_2022 <- rbind(nfigb2022_curated, ni2022_curated)
 
 
 # save
-save(nfi_combined_2022, file = "nfi_combined_2022.RData")
+save(nfi_combined_2022, file = "Data//nfi_combined_2022.RData")
