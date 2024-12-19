@@ -24,7 +24,7 @@ ni.wd <- "\\Data\\woodland cover\\downloaded data\\NI woodland basemap"
 # nfigb2021 <- st_read(paste0(gis.wd, nfi.gb.wd, "\\National_Forest_Inventory_Woodland_GB_2021\\National_Forest_Inventory_Woodland_GB_2021.shp"))
 nfigb2022 <- st_read(paste0(gis.wd, nfi.gb.wd, "\\National_Forest_Inventory_Woodland_GB_2022\\National_Forest_Inventory_GB_2022.shp"))
 
-lcmgb2020 <- rast(paste0(gis.wd, "\\Data\\LCM\\LCM2020\\25m land parcel\\gb2020lcm25m.tif"))
+lcm_gb_data <- rast(paste0(gis.wd, "\\Data\\LCM\\LCM2022\\25m land parcel\\gblcm2022_25m.tif"))
 
 # configure ----
 uncertain_woodland <- c("Assumed woodland", "Cloud \\ shadow", "Windblow", "Ground prep", "Felled", "Failed", "Uncertain", "Young trees", "OPEN GROUND", "NOT KNOWN") # types of "woodland" that neec checking
@@ -43,7 +43,7 @@ table(nfigb2022$IFT_IOA, nfigb2022$CATEGORY)
 # curation nfi ----
 # 
 nfi_data <- nfigb2022
-lcm_data <- lcmgb2020
+lcm_data <- lcm_gb_data
 
 do_nfi_curation <- function(nfi_data, lcm_data) {
   ## nfi ha ----
