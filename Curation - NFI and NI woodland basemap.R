@@ -53,24 +53,6 @@ nfi_data$og_IFT_IOA <- nfi_data$IFT_IOA
 nfi_data$og_Categ <- nfi_data$CATEGORY
 nfi_data$og_nfi.ha <- nfi_data$nfi.ha
 
-## Power line inconsistency ----
-# pl20 <- nfigb2020[ nfigb2020$IFT_IOA == "Powerline", ]
-# pl21 <- nfigb2021[ nfigb2021$IFT_IOA == "Powerline", ]
-# pl22 <- nfigb2022[ nfigb2022$IFT_IOA == "Powerline", ]
-# 
-# power_21_22 <- st_intersection(nfigb2021, nfigb2022[ nfigb2022$IFT_IOA == "Powerline", ]) 
-# power_21_20 <- st_intersection(nfigb2021, nfigb2020[ nfigb2020$IFT_IOA == "Powerline", ]) 
-# power_21_22 <- st_intersection(nfigb2021[ nfigb2021$IFT_IOA == "Powerline", ], nfigb2022[ nfigb2022$IFT_IOA == "Powerline", ])
-# st_write(power_21_22, "scratch//power_22.shp")
-# st_write(power_21_20, "scratch//power_20.shp")
-# st_write(power_21_22, "scratch//power_21_22.shp")
-# st_write(pl20, "scratch//pl2020.shp")
-# st_write(pl22, "scratch//pl2022.shp")
-
-# convert all powerline to Urban for consistencey
-nfi_data$IFT_IOA[ nfi_data$IFT_IOA == "Powerline" ] <- "Urban"
-
-
 ## Sort uncertain woodland, "assumed woodland" etc ----
 uncertain_woodland_df <- nfi_data[ nfi_data$IFT_IOA %in% uncertain_woodland, ] %>% 
   arrange(desc(nfi.ha))
